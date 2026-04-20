@@ -655,7 +655,7 @@ async function loadAgenda() {
     div.innerHTML='<div class="ag-day-h"><div><div class="ag-day-name">'+dayName+'</div><div class="ag-day-sub">'+dateStr+'</div></div><div class="ag-day-sub">'+available+' available</div></div>'+
       slots.map(s=>{
         const status=s.is_booked?'booked':s.is_blocked?'blocked':'avail'
-        const label=s.is_booked?'Booked':s.is_blocked?'Blocked':'Available'
+        const label=s.is_booked?(s.patient_name||s.patient_number||'Booked'):s.is_blocked?'Blocked':'Available'
         return '<div class="ag-slot">'+
           '<div class="ag-slot-time">'+s.start_time+'</div>'+
           '<div class="ag-slot-status"><span class="ag-badge '+status+'">'+label+(s.patient_number?' · '+fmtNum(s.patient_number):'')+'</span></div>'+
