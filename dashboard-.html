@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yana Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --o:#DA7756;--o-l:#FDF1EC;--o-m:#F5C8B4;--o-d:#B85C3A;
+  --bg:#F7F6F3;--w:#FFFFFF;
+  --n1:#1A1A1A;--n2:#2D2D2D;--n3:#4A4A4A;--n4:#6B6B6B;--n5:#8F8F8F;--n6:#B5B5B5;--n7:#D9D9D9;--n8:#EBEBEB;--n9:#F5F5F3;
+  --grn:#16A34A;--grn-l:#F0FDF4;--red:#DC2626;--red-l:#FEF2F2;--blu:#3B82F6;--blu-l:#EFF6FF;
+  --r:10px;--rl:14px;--sb:56px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--n1);height:100vh;overflow:hidden;display:flex;padding-top:env(safe-area-inset-top,0px);}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:var(--n7);border-radius:2px;}
+
+/* SIDEBAR */
+.sb{width:var(--sb);background:var(--w);border-right:1px solid var(--n8);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:3px;flex-shrink:0;}
+.sb-logo{font-size:18px;font-weight:600;letter-spacing:-.04em;margin-bottom:12px;cursor:pointer;}
+.sb-logo span{color:var(--o);}
+.nb{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--n5);transition:all .15s;position:relative;border:none;background:none;}
+.nb:hover{background:var(--n9);color:var(--n2);}
+.nb.active{background:var(--o);color:white;}
+.nb svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;}
+.nb-badge{position:absolute;top:-2px;right:-2px;width:14px;height:14px;border-radius:7px;background:var(--red);color:white;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;display:none;}
+.sb-av{margin-top:auto;width:30px;height:30px;border-radius:50%;background:var(--o);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:white;cursor:pointer;}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.view{display:none;flex-direction:column;flex:1;overflow:hidden;}
+.view.active{display:flex;}
+
+/* TOPBAR */
+.topbar{padding:12px 18px;background:var(--w);border-bottom:1px solid var(--n8);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-left{display:flex;align-items:center;gap:9px;}
+.topbar-av{width:26px;height:26px;border-radius:8px;background:var(--o);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:white;}
+.topbar-name{font-size:13px;font-weight:500;}
+.topbar-status{font-size:11px;color:var(--n5);display:flex;align-items:center;gap:5px;margin-top:1px;}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--grn);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.topbar-right{font-size:11px;color:var(--n5);}
+
+/* CHAT */
+.chat-msgs{flex:1;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;background:var(--bg);}
+.my{display:flex;gap:8px;align-items:flex-start;}
+.my-av{width:24px;height:24px;border-radius:7px;background:var(--o);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:white;flex-shrink:0;margin-top:2px;}
+.my-body{display:flex;flex-direction:column;gap:7px;max-width:520px;}
+.my-bub{background:var(--w);border:1px solid var(--n8);border-radius:3px 12px 12px 12px;padding:9px 12px;font-size:13px;line-height:1.65;animation:mi .25s ease both;}
+.dy{display:flex;justify-content:flex-end;}
+.dy-bub{background:var(--o);color:white;border-radius:12px 3px 12px 12px;padding:9px 12px;font-size:13px;line-height:1.6;max-width:340px;animation:mi .25s ease both;}
+@keyframes mi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.typing{display:flex;gap:8px;align-items:center;}
+.typing-av{width:24px;height:24px;border-radius:7px;background:var(--o);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:white;flex-shrink:0;}
+.typing-dots{background:var(--w);border:1px solid var(--n8);border-radius:3px 12px 12px 12px;padding:9px 13px;display:flex;gap:4px;align-items:center;}
+.typing-dots span{width:4px;height:4px;border-radius:50%;background:var(--n5);animation:td 1s infinite;}
+.typing-dots span:nth-child(2){animation-delay:.15s;}
+.typing-dots span:nth-child(3){animation-delay:.3s;}
+@keyframes td{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+.qrs{display:flex;gap:6px;flex-wrap:wrap;}
+.qr{padding:5px 11px;border-radius:100px;border:1px solid var(--n7);background:var(--w);font-size:12px;color:var(--n3);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .12s;animation:mi .3s ease both;}
+.qr:hover{border-color:var(--o);color:var(--o-d);}
+.ic{border:1px solid var(--n7);border-radius:var(--rl);overflow:hidden;background:var(--w);max-width:360px;animation:mi .3s ease both;}
+.ic-h{padding:9px 13px;border-bottom:1px solid var(--n8);display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:500;}
+.ic-b{padding:10px 13px;}
+.ic-r{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--n8);font-size:12px;}
+.ic-r:last-child{border-bottom:none;}
+.chat-in{padding:10px 14px;background:var(--w);border-top:1px solid var(--n8);display:flex;gap:8px;align-items:center;flex-shrink:0;}
+.chat-in input{flex:1;background:var(--n9);border:1px solid var(--n8);border-radius:var(--r);padding:8px 12px;font-size:13px;color:var(--n1);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;}
+.chat-in input:focus{border-color:var(--o);}
+.chat-in input::placeholder{color:var(--n5);}
+.send-btn{width:32px;height:32px;border-radius:var(--r);background:var(--o);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .12s;}
+.send-btn:hover{background:var(--o-d);}
+.send-btn svg{width:13px;height:13px;stroke:white;fill:none;stroke-width:2.5;}
+
+/* CONVERSATIONS */
+.conv-wrap{display:grid;grid-template-columns:270px 1fr;flex:1;overflow:hidden;}
+.conv-list{border-right:1px solid var(--n8);background:var(--w);display:flex;flex-direction:column;overflow:hidden;}
+.cl-h{padding:13px 14px;border-bottom:1px solid var(--n8);display:flex;align-items:center;justify-content:space-between;}
+.cl-h-title{font-size:13px;font-weight:500;}
+.cl-count{font-size:11px;color:var(--n5);}
+.cl-search{padding:8px 10px;border-bottom:1px solid var(--n8);}
+.cl-search input{width:100%;background:var(--n9);border:1px solid var(--n8);border-radius:var(--r);padding:6px 10px;font-size:12px;color:var(--n1);font-family:'DM Sans',sans-serif;outline:none;}
+.cl-items{flex:1;overflow-y:auto;}
+.ci{display:flex;align-items:center;gap:9px;padding:10px 13px;border-bottom:1px solid var(--n8);cursor:pointer;transition:background .1s;}
+.ci:hover{background:var(--n9);}
+.ci.active{background:var(--o-l);border-left:3px solid var(--o);padding-left:10px;}
+.ci-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:white;flex-shrink:0;}
+.ci-body{flex:1;min-width:0;}
+.ci-name{font-size:12px;font-weight:500;margin-bottom:2px;}
+.ci-prev{font-size:11px;color:var(--n5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ci-time{font-size:10px;color:var(--n5);flex-shrink:0;}
+.conv-detail{display:flex;flex-direction:column;background:var(--bg);overflow:hidden;}
+.cd-h{padding:12px 16px;background:var(--w);border-bottom:1px solid var(--n8);display:flex;align-items:center;gap:9px;flex-shrink:0;}
+.cd-msgs{flex:1;padding:13px 16px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
+.bp{max-width:72%;padding:8px 11px;background:var(--w);border-radius:3px 10px 10px 10px;font-size:12px;line-height:1.6;border:1px solid var(--n8);align-self:flex-start;}
+.by{max-width:72%;padding:8px 11px;background:var(--o-l);border-radius:10px 3px 10px 10px;font-size:12px;line-height:1.6;border:1px solid var(--o-m);color:var(--o-d);align-self:flex-end;}
+.bt{font-size:10px;color:var(--n5);align-self:flex-end;}
+.conv-empty{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--n5);}
+.conv-empty svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.5;}
+
+/* PENDING */
+.pend-wrap{flex:1;overflow-y:auto;padding:16px;}
+.pend-empty{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--n5);}
+.pend-card{background:var(--w);border:1px solid var(--n7);border-radius:var(--rl);overflow:hidden;margin-bottom:12px;animation:mi .3s ease both;}
+.pc-h{padding:11px 14px;background:var(--o-l);border-bottom:1px solid var(--o-m);display:flex;align-items:center;gap:9px;}
+.pc-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:white;flex-shrink:0;}
+.pc-name{font-size:12px;font-weight:500;flex:1;}
+.pc-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;background:var(--red-l);color:var(--red);}
+.pc-msg{padding:11px 14px;border-bottom:1px solid var(--n8);font-size:12px;color:var(--n3);line-height:1.6;}
+.pc-reason{padding:8px 14px;border-bottom:1px solid var(--n8);font-size:11px;color:var(--n5);background:var(--n9);display:flex;align-items:center;gap:6px;}
+.pc-draft-label{padding:9px 14px 4px;font-size:10px;font-weight:600;color:var(--o-d);text-transform:uppercase;letter-spacing:.05em;}
+.pc-draft{padding:4px 14px 11px;font-size:12px;color:var(--n2);line-height:1.65;border-bottom:1px solid var(--n8);}
+.pc-draft[contenteditable=true]{background:var(--o-l);outline:none;}
+.pc-actions{padding:10px 14px;display:flex;gap:7px;}
+.btn-send{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;background:var(--o);color:white;font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .13s;}
+.btn-send:hover{background:var(--o-d);}
+.btn-edit{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:8px;border:1px solid var(--n7);background:var(--w);color:var(--n4);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.btn-skip{padding:7px 12px;border-radius:8px;border:1px solid var(--n7);background:var(--w);color:var(--n5);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-left:auto;}
+.btn-send svg,.btn-edit svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;}
+
+/* AGENDA */
+.agenda-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.agenda-toolbar{padding:11px 16px;background:var(--w);border-bottom:1px solid var(--n8);display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.agenda-toolbar-title{font-size:13px;font-weight:500;flex:1;}
+.btn-block{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:8px;background:var(--o);color:white;font-size:12px;font-weight:500;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.btn-block svg{width:11px;height:11px;stroke:white;fill:none;stroke-width:2;}
+.agenda-grid{flex:1;overflow-y:auto;padding:16px;}
+.ag-day{background:var(--w);border:1px solid var(--n7);border-radius:var(--rl);margin-bottom:10px;overflow:hidden;}
+.ag-day-h{padding:11px 14px;border-bottom:1px solid var(--n8);display:flex;align-items:center;justify-content:space-between;}
+.ag-day-name{font-size:13px;font-weight:500;}
+.ag-day-sub{font-size:11px;color:var(--n5);}
+.ag-slot{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--n8);font-size:12px;}
+.ag-slot:last-child{border-bottom:none;}
+.ag-slot-time{min-width:80px;color:var(--n4);}
+.ag-slot-status{flex:1;}
+.ag-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:100px;}
+.ag-badge.avail{background:var(--grn-l);color:var(--grn);}
+.ag-badge.blocked{background:var(--red-l);color:var(--red);}
+.ag-toggle{width:28px;height:16px;border-radius:8px;border:none;cursor:pointer;transition:background .2s;position:relative;flex-shrink:0;}
+.ag-toggle.on{background:var(--grn);}
+.ag-toggle.off{background:var(--n6);}
+.ag-toggle::after{content:'';position:absolute;top:2px;width:12px;height:12px;border-radius:6px;background:white;transition:left .2s;}
+.ag-toggle.on::after{left:14px;}
+.ag-toggle.off::after{left:2px;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:100;display:none;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--w);border-radius:var(--rl);padding:24px;width:360px;max-width:90vw;}
+.modal-title{font-size:15px;font-weight:500;margin-bottom:16px;}
+.modal label{font-size:12px;color:var(--n4);display:block;margin-bottom:4px;margin-top:12px;}
+.modal select,.modal input{width:100%;background:var(--n9);border:1px solid var(--n8);border-radius:var(--r);padding:8px 11px;font-size:13px;color:var(--n1);font-family:'DM Sans',sans-serif;outline:none;}
+.modal-actions{display:flex;gap:8px;margin-top:20px;justify-content:flex-end;}
+.btn-cancel{padding:8px 16px;border-radius:8px;border:1px solid var(--n7);background:var(--w);color:var(--n4);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.btn-confirm{padding:8px 16px;border-radius:8px;background:var(--o);color:white;font-size:13px;font-weight:500;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;flex:1;gap:6px;color:var(--n5);font-size:13px;}
+.ld{width:6px;height:6px;border-radius:50%;background:var(--o);animation:td 1s infinite;}
+.ld:nth-child(2){animation-delay:.15s;}.ld:nth-child(3){animation-delay:.3s;}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .sb{width:48px;}
+  .conv-wrap{grid-template-columns:1fr;}
+  .conv-list{position:absolute;z-index:20;width:100%;height:100%;display:none;}
+  .conv-list.show{display:flex;}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sb">
+  <div class="sb-logo">y<span>.</span></div>
+  <button class="nb active" id="nb-chat" onclick="sv('chat')" title="Chat">
+    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  </button>
+  <button class="nb" id="nb-conv" onclick="sv('conv')" title="Patients">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <div class="nb-badge" id="conv-badge">0</div>
+  </button>
+  <button class="nb" id="nb-pend" onclick="sv('pend')" title="Pending">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <div class="nb-badge" id="pend-badge">0</div>
+  </button>
+  <button class="nb" id="nb-agenda" onclick="sv('agenda')" title="Agenda">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+  </button>
+  <div class="sb-av" onclick="signOut()" title="Sign out">DS</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- CHAT -->
+  <div class="view active" id="view-chat">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-av">Y</div>
+        <div>
+          <div class="topbar-name">Yana</div>
+          <div class="topbar-status"><div class="sdot"></div>Active · handling your clinic</div>
+        </div>
+      </div>
+      <div class="topbar-right" id="chat-date"></div>
+    </div>
+    <div class="chat-msgs" id="chat-msgs"></div>
+    <div class="chat-in">
+      <input id="chat-field" placeholder="Ask Yana anything about your clinic…" onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="send-btn" onclick="sendChat()"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+    </div>
+  </div>
+
+  <!-- CONVERSATIONS -->
+  <div class="view" id="view-conv">
+    <div class="topbar">
+      <div class="topbar-left">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--n4)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <div class="topbar-name">Patients</div>
+      </div>
+      <div class="topbar-right" id="conv-count">Loading…</div>
+    </div>
+    <div class="conv-wrap">
+      <div class="conv-list" id="conv-list">
+        <div class="cl-h">
+          <div class="cl-h-title">All patients</div>
+        </div>
+        <div class="cl-search">
+          <input placeholder="Search…" oninput="filterConv(this.value)">
+        </div>
+        <div class="cl-items" id="cl-items"><div class="loading"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div></div>
+      </div>
+      <div class="conv-detail" id="conv-detail">
+        <div class="conv-empty">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <div style="font-size:13px">Select a patient</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PENDING -->
+  <div class="view" id="view-pend">
+    <div class="topbar">
+      <div class="topbar-left">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--n4)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <div class="topbar-name">Pending review</div>
+      </div>
+      <div class="topbar-right" id="pend-count">Loading…</div>
+    </div>
+    <div class="pend-wrap" id="pend-wrap">
+      <div class="loading"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div>
+    </div>
+  </div>
+
+  <!-- AGENDA -->
+  <div class="view" id="view-agenda">
+    <div class="topbar">
+      <div class="topbar-left">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--n4)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <div class="topbar-name">Agenda</div>
+      </div>
+      <button class="btn-block" onclick="showBlockModal()">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Block time
+      </button>
+    </div>
+    <div class="agenda-grid" id="agenda-grid">
+      <div class="loading"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BLOCK MODAL -->
+<div class="modal-overlay" id="block-modal">
+  <div class="modal">
+    <div class="modal-title">Block time slot</div>
+    <label>Day</label>
+    <select id="block-day">
+      <option value="monday">Monday</option>
+      <option value="tuesday">Tuesday</option>
+      <option value="wednesday">Wednesday</option>
+      <option value="thursday">Thursday</option>
+      <option value="friday">Friday</option>
+    </select>
+    <label>Time</label>
+    <select id="block-time">
+      <option value="09:00">9:00 AM</option>
+      <option value="10:00">10:00 AM</option>
+      <option value="11:00">11:00 AM</option>
+      <option value="13:00">1:00 PM</option>
+      <option value="14:00">2:00 PM</option>
+      <option value="15:00">3:00 PM</option>
+    </select>
+    <label>Reason (optional)</label>
+    <input id="block-reason" placeholder="e.g. Personal call">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="hideBlockModal()">Cancel</button>
+      <button class="btn-confirm" onclick="blockSlot()">Block</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL = 'https://mcxfydsffwqhmusdtjgr.supabase.co'
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jeGZ5ZHNmZndxaG11c2R0amdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzAyODksImV4cCI6MjA5MjEwNjI4OX0.MrtErXT8ERg6HraJ32cn3FlH7pZT317bmOiT0catorg'
+const db = supabase.createClient(SB_URL, SB_KEY)
+const CLINIC = 'couture'
+
+let allConvs = [], selPatient = null
+
+// ── AUTH CHECK ──
+db.auth.getSession().then(({data:{session}}) => {
+  if(!session) window.location.href = 'yana-login.html'
+})
+
+// ── SIGN OUT ──
+function signOut() {
+  db.auth.signOut().then(() => { window.location.href = 'yana-login.html' })
+}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', () => {
+  const now = new Date()
+  document.getElementById('chat-date').textContent =
+    now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})
+  initChat()
+  loadConvs()
+  loadPending()
+  loadAgenda()
+  subscribeRealtime()
+  requestNotifPermission()
+})
+
+// ── VIEW SWITCH ──
+function sv(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'))
+  document.getElementById('view-'+name).classList.add('active')
+  document.getElementById('nb-'+name).classList.add('active')
+  if(name==='conv') loadConvs()
+  if(name==='pend') loadPending()
+  if(name==='agenda') loadAgenda()
+}
+
+// ── NOTIFICATIONS ──
+function requestNotifPermission() {
+  if('Notification' in window && Notification.permission==='default') {
+    Notification.requestPermission()
+  }
+}
+function pushNotif(title, body) {
+  if('Notification' in window && Notification.permission==='granted') {
+    new Notification(title, { body, icon: '/favicon.ico' })
+  }
+}
+
+// ── REALTIME ──
+function subscribeRealtime() {
+  db.channel('all-changes')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'conversations'},() => {
+      loadConvs()
+      pushNotif('New patient message','Yana handled a new conversation')
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'pending'},() => {
+      loadPending()
+      pushNotif('Pending review','A patient message needs your attention')
+    })
+    .subscribe()
+}
+
+// ── HELPERS ──
+function fmtNum(n){ return n.replace('whatsapp:','') }
+function initials(n){
+  const s=fmtNum(n).replace('+','').trim()
+  return s.substring(0,2).toUpperCase()
+}
+function avColor(s){
+  const c=['#6366F1','#DA7756','#059669','#3B82F6','#8B5CF6','#EF4444','#D97706','#0EA5E9']
+  let h=0; for(let i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h)
+  return c[Math.abs(h)%c.length]
+}
+function timeAgo(ts){
+  const d=Date.now()-new Date(ts).getTime()
+  const m=Math.floor(d/60000)
+  if(m<1) return 'just now'
+  if(m<60) return m+'m ago'
+  const h=Math.floor(m/60)
+  if(h<24) return h+'h ago'
+  return Math.floor(h/24)+'d ago'
+}
+function addYana(container, text) {
+  const el=document.createElement('div')
+  el.className='my'
+  el.innerHTML='<div class="my-av">Y</div><div class="my-body"><div class="my-bub">'+text+'</div></div>'
+  container.appendChild(el)
+  container.scrollTop=container.scrollHeight
+}
+function addTyping(container) {
+  const el=document.createElement('div')
+  el.className='typing'
+  el.innerHTML='<div class="typing-av">Y</div><div class="typing-dots"><span></span><span></span><span></span></div>'
+  container.appendChild(el)
+  container.scrollTop=container.scrollHeight
+  return el
+}
+
+// ── CHAT ──
+async function initChat() {
+  const msgs=document.getElementById('chat-msgs')
+  const t=addTyping(msgs)
+  const today=new Date(); today.setHours(0,0,0,0)
+  const {data:todayD}=await db.from('conversations').select('id').gte('created_at',today.toISOString())
+  const {data:allD}=await db.from('conversations').select('patient_number')
+  const {data:pendD}=await db.from('pending').select('id').eq('status','waiting')
+  const unique=new Set(allD?.map(c=>c.patient_number)||[]).size
+  const todayN=todayD?.length||0
+  const pendN=pendD?.length||0
+  t.remove()
+
+  const h=new Date().getHours()
+  const g=h<12?'Good morning':h<18?'Good afternoon':'Good evening'
+  addYana(msgs, g+', Dr. Silva. Here\'s what\'s happening with your clinic.')
+
+  // Stats card
+  const card=document.createElement('div')
+  card.className='my'
+  card.innerHTML=`<div class="my-av">Y</div><div class="my-body"><div class="ic">
+    <div class="ic-h"><span>Clinic overview</span></div>
+    <div class="ic-b">
+      <div class="ic-r"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--o)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><div style="flex:1">Conversations today</div><strong>${todayN}</strong></div>
+      <div class="ic-r"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--grn)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><div style="flex:1">Total patients</div><strong>${unique}</strong></div>
+      <div class="ic-r" style="border:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${pendN>0?'var(--red)':'var(--grn)'}" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><div style="flex:1">Pending review</div><strong style="color:${pendN>0?'var(--red)':'var(--grn)'}">${pendN}</strong></div>
+    </div>
+  </div></div>`
+  msgs.appendChild(card)
+
+  if(pendN>0) {
+    addYana(msgs, `You have ${pendN} case${pendN>1?'s':''} waiting for your review.`)
+    const qr=document.createElement('div')
+    qr.className='my'
+    qr.innerHTML='<div class="my-av" style="opacity:0">Y</div><div class="my-body"><div class="qrs"><div class="qr" onclick="sv(\'pend\')">Review now</div><div class="qr" onclick="sv(\'conv\')">See patients</div><div class="qr" onclick="sv(\'agenda\')">View agenda</div></div></div>'
+    msgs.appendChild(qr)
+  } else {
+    const qr=document.createElement('div')
+    qr.className='my'
+    qr.innerHTML='<div class="my-av" style="opacity:0">Y</div><div class="my-body"><div class="qrs"><div class="qr" onclick="sv(\'conv\')">See patients</div><div class="qr" onclick="sv(\'agenda\')">View agenda</div><div class="qr" onclick="askYana(\'How many patients this week?\')">Weekly stats</div></div></div>'
+    msgs.appendChild(qr)
+  }
+  msgs.scrollTop=msgs.scrollHeight
+}
+
+async function sendChat() {
+  const field=document.getElementById('chat-field')
+  const text=field.value.trim(); if(!text) return
+  field.value=''; await askYana(text)
+}
+
+async function askYana(text) {
+  const msgs=document.getElementById('chat-msgs')
+  // Remove quick replies
+  const qrs=msgs.querySelector('.qrs'); if(qrs) qrs.closest('.my').remove()
+  const dm=document.createElement('div')
+  dm.className='dy'; dm.innerHTML='<div class="dy-bub">'+text+'</div>'
+  msgs.appendChild(dm); msgs.scrollTop=msgs.scrollHeight
+  const t=addTyping(msgs)
+  let response=''
+  const q=text.toLowerCase()
+  if(q.includes('today')||q.includes('conversation')) {
+    const today=new Date(); today.setHours(0,0,0,0)
+    const {data}=await db.from('conversations').select('*').gte('created_at',today.toISOString()).order('created_at',{ascending:false}).limit(5)
+    response=data&&data.length>0?`${data.length} conversation${data.length>1?'s':''} today. Last from ${fmtNum(data[0].patient_number)} at ${new Date(data[0].created_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}.`:'No conversations yet today.'
+  } else if(q.includes('patient')||q.includes('week')) {
+    const {data}=await db.from('conversations').select('patient_number')
+    const u=new Set(data?.map(c=>c.patient_number)||[]).size
+    response=`${u} unique patient${u!==1?'s':''} in your database.`
+  } else if(q.includes('pending')) {
+    const {data}=await db.from('pending').select('id').eq('status','waiting')
+    response=data&&data.length>0?`${data.length} case${data.length>1?'s':''} waiting for your review.`:'No pending cases right now.'
+  } else {
+    response='I can show you conversation stats, patient activity and pending cases. Try asking "show today\'s conversations" or "how many patients this week?"'
+  }
+  t.remove(); addYana(msgs, response)
+}
+
+// ── CONVERSATIONS ──
+async function loadConvs() {
+  const {data,error}=await db.from('conversations').select('*').order('created_at',{ascending:false})
+  if(error||!data) return
+  const patients={}
+  data.forEach(row => {
+    if(!patients[row.patient_number]) patients[row.patient_number]={messages:[],latest:row}
+    patients[row.patient_number].messages.push(row)
+  })
+  allConvs=Object.entries(patients).map(([num,val])=>({
+    number:num, display:fmtNum(num), latest:val.latest,
+    messages:val.messages.reverse(), count:val.messages.length
+  }))
+  renderConvList(allConvs)
+  const badge=document.getElementById('conv-badge')
+  badge.textContent=allConvs.length
+  badge.style.display=allConvs.length>0?'flex':'none'
+  document.getElementById('conv-count').textContent=allConvs.length+' patient'+(allConvs.length!==1?'s':'')
+}
+
+function renderConvList(list) {
+  const container=document.getElementById('cl-items')
+  if(list.length===0){container.innerHTML='<div style="padding:20px;text-align:center;font-size:12px;color:var(--n5)">No patients yet</div>';return}
+  container.innerHTML=''
+  list.forEach(function(p,i){
+    const div=document.createElement('div')
+    div.className='ci'+(selPatient===p.number?' active':'')
+    div.innerHTML='<div class="ci-av" style="background:'+avColor(p.number)+'">'+initials(p.number)+'</div>'+
+      '<div class="ci-body"><div class="ci-name">'+p.display+'</div><div class="ci-prev">'+p.latest.patient_message+'</div></div>'+
+      '<div class="ci-time">'+timeAgo(p.latest.created_at)+'</div>'
+    div.addEventListener('click',()=>selectPatient(p.number))
+    container.appendChild(div)
+  })
+}
+
+function selectPatient(number) {
+  selPatient=number
+  const patient=allConvs.find(p=>p.number===number)
+  if(!patient) return
+  document.querySelectorAll('.ci').forEach(el=>el.classList.remove('active'))
+  const items=document.getElementById('cl-items').querySelectorAll('.ci')
+  items.forEach(el=>{ if(el.querySelector('.ci-name')&&el.querySelector('.ci-name').textContent===patient.display) el.classList.add('active') })
+  const detail=document.getElementById('conv-detail')
+  detail.innerHTML='<div class="cd-h"><div class="ci-av" style="background:'+avColor(number)+';width:28px;height:28px;font-size:10px;">'+initials(number)+'</div><div><div style="font-size:13px;font-weight:500">'+patient.display+'</div><div style="font-size:11px;color:var(--n5)">'+patient.count+' messages · last active '+timeAgo(patient.latest.created_at)+'</div></div></div>'+
+    '<div class="cd-msgs" id="cd-msgs">'+
+    patient.messages.map(m=>'<div class="bp">'+m.patient_message+'</div><div class="by">'+m.yana_response+'</div><div class="bt">'+new Date(m.created_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})+'</div>').join('')+
+    '</div>'
+  const dm=document.getElementById('cd-msgs'); if(dm) dm.scrollTop=dm.scrollHeight
+}
+
+function filterConv(q) {
+  if(!q){renderConvList(allConvs);return}
+  renderConvList(allConvs.filter(p=>p.display.toLowerCase().includes(q.toLowerCase())||p.latest.patient_message.toLowerCase().includes(q.toLowerCase())))
+}
+
+// ── PENDING ──
+async function loadPending() {
+  const {data,error}=await db.from('pending').select('*').eq('status','waiting').order('created_at',{ascending:false})
+  const wrap=document.getElementById('pend-wrap')
+  const badge=document.getElementById('pend-badge')
+  const count=document.getElementById('pend-count')
+  if(error||!data||data.length===0){
+    wrap.innerHTML='<div class="pend-empty"><svg viewBox="0 0 24 24" style="width:28px;height:28px;stroke:var(--n6);fill:none;stroke-width:1.5"><polyline points="20 6 9 17 4 12"/></svg><div style="font-size:13px">All caught up</div></div>'
+    badge.style.display='none'
+    count.textContent='All clear'
+    return
+  }
+  badge.textContent=data.length; badge.style.display='flex'
+  count.textContent=data.length+' case'+(data.length!==1?'s':'')+' waiting'
+  wrap.innerHTML=''
+  data.forEach(item=>{
+    const card=document.createElement('div')
+    card.className='pend-card'
+    card.innerHTML='<div class="pc-h"><div class="pc-av" style="background:'+avColor(item.patient_number)+'">'+initials(item.patient_number)+'</div><div class="pc-name">'+fmtNum(item.patient_number)+'</div><div class="pc-tag">Needs review</div></div>'+
+      '<div class="pc-msg">'+item.patient_message+'</div>'+
+      '<div class="pc-reason"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'+item.escalation_reason+'</div>'+
+      '<div class="pc-draft-label">Yana\'s draft</div>'+
+      '<div class="pc-draft" id="draft-'+item.id+'">'+item.yana_draft+'</div>'+
+      '<div class="pc-actions">'+
+        '<button class="btn-send" onclick="approvePending('+item.id+')"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send</button>'+
+        '<button class="btn-edit" onclick="editDraft('+item.id+')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>'+
+        '<button class="btn-skip" onclick="skipPending('+item.id+')">Skip</button>'+
+      '</div>'
+    wrap.appendChild(card)
+  })
+}
+
+function editDraft(id) {
+  const el=document.getElementById('draft-'+id)
+  el.contentEditable='true'; el.focus()
+  const range=document.createRange(); const sel=window.getSelection()
+  range.selectNodeContents(el); range.collapse(false)
+  sel.removeAllRanges(); sel.addRange(range)
+}
+
+async function approvePending(id) {
+  const draft=document.getElementById('draft-'+id)
+  const text=draft.textContent.trim()
+  await db.from('pending').update({status:'approved'}).eq('id',id)
+  // Note: In production this would also send via Twilio
+  loadPending()
+}
+
+async function skipPending(id) {
+  await db.from('pending').update({status:'skipped'}).eq('id',id)
+  loadPending()
+}
+
+// ── AGENDA ──
+async function loadAgenda() {
+  const {data,error}=await db.from('agenda').select('*').eq('clinic_id',CLINIC).order('day_of_week').order('start_time')
+  const grid=document.getElementById('agenda-grid')
+  if(error||!data){grid.innerHTML='<div style="padding:20px;color:var(--n5);font-size:13px">Could not load agenda</div>';return}
+  const days=['monday','tuesday','wednesday','thursday','friday']
+  const dayNames={'monday':'Monday','tuesday':'Tuesday','wednesday':'Wednesday','thursday':'Thursday','friday':'Friday'}
+  grid.innerHTML=''
+  days.forEach(day=>{
+    const slots=data.filter(s=>s.day_of_week===day)
+    if(!slots.length) return
+    const div=document.createElement('div')
+    div.className='ag-day'
+    div.innerHTML='<div class="ag-day-h"><div class="ag-day-name">'+dayNames[day]+'</div><div class="ag-day-sub">'+slots.length+' slots</div></div>'+
+      slots.map(s=>'<div class="ag-slot">'+
+        '<div class="ag-slot-time">'+s.start_time+' – '+s.end_time+'</div>'+
+        '<div class="ag-slot-status"><span class="ag-badge '+(s.is_blocked?'blocked':'avail')+'">'+(s.is_blocked?'Blocked':'Available')+'</span></div>'+
+        '<button class="ag-toggle '+(s.is_blocked?'off':'on')+'" onclick="toggleSlot('+s.id+','+s.is_blocked+')" title="'+(s.is_blocked?'Unblock':'Block')+'"></button>'+
+      '</div>').join('')
+    grid.appendChild(div)
+  })
+}
+
+async function toggleSlot(id, isBlocked) {
+  await db.from('agenda').update({is_blocked:!isBlocked}).eq('id',id)
+  loadAgenda()
+}
+
+function showBlockModal(){ document.getElementById('block-modal').classList.add('show') }
+function hideBlockModal(){ document.getElementById('block-modal').classList.remove('show') }
+
+async function blockSlot() {
+  const day=document.getElementById('block-day').value
+  const time=document.getElementById('block-time').value
+  const reason=document.getElementById('block-reason').value
+  // Find matching slot
+  const {data}=await db.from('agenda').select('id').eq('clinic_id',CLINIC).eq('day_of_week',day).eq('start_time',time).limit(1)
+  if(data&&data.length>0) {
+    await db.from('agenda').update({is_blocked:true,blocked_reason:reason||null}).eq('id',data[0].id)
+  }
+  hideBlockModal(); loadAgenda()
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yana — Sign in</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--o:#DA7756;--o-l:#FDF1EC;--o-d:#B85C3A;--bg:#F7F6F3;--w:#FFFFFF;--n1:#1A1A1A;--n4:#6B6B6B;--n5:#8F8F8F;--n7:#D9D9D9;--n8:#EBEBEB;--n9:#F5F5F3;--red:#DC2626;--red-l:#FEF2F2;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--n1);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.card{background:var(--w);border-radius:16px;padding:40px;width:100%;max-width:380px;box-shadow:0 4px 24px rgba(0,0,0,.06);}
+.logo{font-size:28px;font-weight:600;letter-spacing:-.04em;text-align:center;margin-bottom:8px;}
+.logo span{color:var(--o);}
+.tagline{font-size:13px;color:var(--n5);text-align:center;margin-bottom:32px;}
+label{font-size:12px;color:var(--n4);display:block;margin-bottom:5px;margin-top:16px;}
+input{width:100%;background:var(--n9);border:1px solid var(--n8);border-radius:10px;padding:10px 13px;font-size:14px;color:var(--n1);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;}
+input:focus{border-color:var(--o);}
+input::placeholder{color:var(--n5);}
+.btn{width:100%;padding:12px;border-radius:10px;background:var(--o);color:white;font-size:14px;font-weight:500;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:24px;transition:background .15s;}
+.btn:hover{background:var(--o-d);}
+.btn:disabled{background:var(--n7);cursor:not-allowed;}
+.error{background:var(--red-l);color:var(--red);font-size:12px;padding:9px 12px;border-radius:8px;margin-top:14px;display:none;}
+.error.show{display:block;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">yana<span>.</span></div>
+  <div class="tagline">Your clinic assistant</div>
+  <label>Email</label>
+  <input type="email" id="email" placeholder="doctor@clinic.com" onkeydown="if(event.key==='Enter')signIn()">
+  <label>Password</label>
+  <input type="password" id="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')signIn()">
+  <div class="error" id="error"></div>
+  <button class="btn" id="btn" onclick="signIn()">Sign in</button>
+</div>
+
+<script>
+const SB_URL='https://mcxfydsffwqhmusdtjgr.supabase.co'
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jeGZ5ZHNmZndxaG11c2R0amdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzAyODksImV4cCI6MjA5MjEwNjI4OX0.MrtErXT8ERg6HraJ32cn3FlH7pZT317bmOiT0catorg'
+const db=supabase.createClient(SB_URL,SB_KEY)
+
+// If already logged in, redirect to dashboard
+db.auth.getSession().then(({data:{session}})=>{
+  if(session) window.location.href='yana-dashboard.html'
+})
+
+async function signIn(){
+  const email=document.getElementById('email').value.trim()
+  const password=document.getElementById('password').value
+  const btn=document.getElementById('btn')
+  const err=document.getElementById('error')
+  
+  if(!email||!password){showError('Please enter your email and password.');return}
+  
+  btn.disabled=true; btn.textContent='Signing in…'; err.classList.remove('show')
+  
+  const {data,error}=await db.auth.signInWithPassword({email,password})
+  
+  if(error){
+    showError('Incorrect email or password.')
+    btn.disabled=false; btn.textContent='Sign in'
+    return
+  }
+  
+  window.location.href='yana-dashboard.html'
+}
+
+function showError(msg){
+  const err=document.getElementById('error')
+  err.textContent=msg; err.classList.add('show')
+}
+</script>
+</body>
+</html>
